@@ -1,34 +1,65 @@
 'use client';
 
 import Link from "next/link";
-import TailButton from "./TailButton";
+import { usePathname } from 'next/navigation'
+import { Activity, LayoutDashboard, LogIn, LogOut, Search } from "lucide-react";
+import { useAtomValue } from "jotai"
+import { isLoginAtom } from "../atoms/atoms"
 
-const LogoutClick = () => {
-    console.log("로그아웃이요")
+type SidebarProps = {
+    icon: React.ReactNode,
+    label: string,
+    active?: boolean,
+    href: string,
 }
 
-export default function () {
+export default function Nav() {
+    const isLogin = useAtomValue(isLoginAtom) ;
+    const pathname = usePathname();
+    
     return (
-        <div className='flex flex-col h-screen'>
-            <img src="./KSPO_CI.png" className="my-5 p-3" />
-            <ul className='flex flex-col my-10 justify-center items-center'>
-                <li className="my-5">
-                    <Link href="/dashboard"
-                        className='text-2xl text-white font-bold p-2 rounded-sm hover:text-blue-900'>
-                        DashBoard
-                    </Link>
-                </li>
-                <li className="my-5">
-                    <Link href="/search"
-                        className='text-2xl text-white font-bold p-2 rounded-sm hover:text-blue-900'>
-                        체육시설검색
-                    </Link>
-                </li>   
-            </ul>
-            <div className="mt-auto pb-10 text-white flex flex-col justify-center items-center px-5">
-                <h1 className="my-3">환영합니다. X X X 님.</h1>
-                <TailButton color="blue" caption="로그아웃" onHandle={LogoutClick} />
+        <aside className='w-20 2xl:w-55 border-r border-gray-200 bg-white flex flex-col items-center 2xl:items-stretch py-8 sticky top-0 h-screen z-50 transition-all'>
+            <div className="flex items-center gap-3 px-6 mb-12">
+                <div className="bg-blue-600 p-2 rounded-xl text-white">
+                    <Activity size={24} />
+                </div>
+                <h1 className="hidden 2xl:block text-lg font-bold text-gray-900 tracking-tight">K-Sports Hub</h1>
             </div>
-        </div>
+            <nav className="flex-1 px-4 space-y-2">
+                <Link
+                    href="/dashboard"
+                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${pathname === '/dashboard' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'}`}
+                >
+                    <LayoutDashboard size={20} />
+                    <span className="hidden 2xl:block text-sm font-semibold">대시보드</span>
+                </Link>
+                <Link
+                    href="/search"
+                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${pathname === '/search' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'}`}
+                >
+                    <Search size={20} />
+                    <span className="hidden 2xl:block text-sm font-semibold">시설 상세 검색</span>
+                </Link>
+            </nav>
+            <div className="px-4 pb-4 space-y-2 border-t border-gray-200 pt-6">
+                {isLogin ? 
+                <Link
+                    href="/"
+                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all text-gray-400 hover:bg-gray-50 hover:text-gray-600`}
+                >
+                    <LogOut size={20} />
+                    <span className="hidden 2xl:block text-sm font-semibold">로그아웃</span>
+                </Link>
+                :
+                <Link
+                    href="/"
+                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all text-gray-400 hover:bg-gray-50 hover:text-gray-600`}
+                >
+                    <LogIn size={20} />
+                    <span className="hidden 2xl:block text-sm font-semibold">로그인</span>
+                </Link>
+                }
+            </div>
+        </aside>
     );
 }
