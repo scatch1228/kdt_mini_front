@@ -3,12 +3,15 @@
 import Header from "@/components/Header";
 import KoreaMap from "@/components/KoreaMap";
 import DistrictCnt from "@/components/DistrictCnt";
-import PacililtyChart from "@/components/PacililtyChart"
+import FacilityChart from "@/components/FacilityChart"
 import SafetyPeriod from "@/components/SafetyPeriod";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useEffect, useTransition } from "react";
 import { generateAnalysis } from "./actions";
 import ReactMarkdown from 'react-markdown';
 import { Accessibility, ChevronRight, History, MapPin, ShieldCheck, Sparkles, Trophy } from "lucide-react";
+import FacilityCard from "@/components/FacilityCard";
+import FacilityData from "@/data/facility.json"
+import { FacilityType } from "@/type/FacilityType"
 
 const FACILITY_TYPES = [
   '축구장', '테니스장', '수영장', '체육관', '야구장', '골프연습장', '국궁장',
@@ -17,68 +20,26 @@ const FACILITY_TYPES = [
   '육상경기장', '씨름장', '유도장', '검도장', '암벽등반장'
 ];
 
-const generateItems = (regionName: string, count: number) => {
-  return Array.from({ length: count }, (_, i) => ({
-    id: i,
-    name: `${regionName} ${FACILITY_TYPES[i % FACILITY_TYPES.length]} ${Math.floor(Math.random() * 10) + 1}관`,
-    type: FACILITY_TYPES[i % FACILITY_TYPES.length],
-    address: `${regionName} 중앙로 ${i + 10}번길`,
-    isFree: Math.random() > 0.3,
-    rating: (Math.random() * 2 + 3).toFixed(1),
-    hasSeismicDesign: Math.random() > 0.4,
-    buildYear: 1990 + Math.floor(Math.random() * 35)
-  }));
-};
-
-const FacilityCard = ({ facility }: { facility: any }) => (
-  <div className="bg-white p-4 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all group cursor-pointer relative overflow-hidden">
-    {2025 - facility.buildYear >= 30 && (
-      <div className="absolute -right-6 top-3 rotate-45 bg-amber-500 text-white text-[8px] font-bold px-8 py-1 shadow-sm">
-        노후 주의
-      </div>
-    )}
-    <div className="flex justify-between items-start mb-2">
-      <div className="flex flex-wrap gap-1.5 max-w-[80%]">
-        <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded tracking-tight">{facility.type}</span>
-        {facility.hasSeismicDesign && (
-          <span className="bg-green-50 text-green-600 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
-            <ShieldCheck size={10} /> 내진
-          </span>
-        )}
-      </div>
-      <div className="flex items-center text-yellow-500 text-xs font-bold">
-        <Trophy size={12} className="mr-1" /> {facility.rating}
-      </div>
-    </div>
-    <h4 className="font-bold text-gray-800 group-hover:text-blue-600 transition-colors truncate mb-1 text-sm">{facility.name}</h4>
-    <p className="text-[10px] text-gray-400 font-medium mb-3 flex items-center gap-1">
-      <History size={10} /> {facility.buildYear}년 준공 (약 {2025 - facility.buildYear}년 경과)
-    </p>
-    <div className="flex items-center text-gray-400 text-[11px] mb-3">
-      <MapPin size={12} className="mr-1 shrink-0" />
-      <span className="truncate">{facility.address}</span>
-    </div>
-    <div className="flex items-center justify-end pt-3 border-t border-gray-50">
-      <span className={`text-[10px] font-bold px-2 py-1 rounded-lg bg-green-50 text-green-600`}>
-        상세정보
-      </span>
-      <ChevronRight size={14} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
-    </div>
-  </div>
-);
-
 export default function DashBoardPage() {
+  // 선택된 지역 상태 (기본값: 서울특별시)
+  const [selectedProvince, setSelectedProvince] = useState('서울특별시');
+
+  // 선택된 지역에 따른 시설 목록 필터링 (useMemo 사용 권장)
+  // const filteredFacilities = useMemo(() => {
+  //   return FacilityData.filter((f) => f.province === selectedProvince);
+  // }, [selectedProvince]);
 
   const [search, setSearch] = useState('');
+
   const [summary, setSummary] = useState('');
   const [isPending, startTransition] = useTransition();
-  const activeRegion = '서울특별시';
-  const items = useMemo(() => generateItems(activeRegion, 12), [activeRegion]);
+  const [isCheck, setIsCheck] = useState(false);
+  const [facilityList, setFacilityList] = useState<FacilityType[]>([]);
+  const facilities = useMemo(() => FacilityData, []);
 
   const handleDistrictClick = async () => {
-
     const districtData = {
-      regionName: '서울특별시',
+      regionName: selectedProvince,
       activeRegion: 20,
       facilityCnt: 500,
       seismicRate: 10
@@ -93,16 +54,19 @@ export default function DashBoardPage() {
         setSummary('');
       }
     });
+
+    setFacilityList(FacilityData);
+    setIsCheck(true);
   }
 
-  const filteredItems = items.filter(item =>
-    item.name.includes(search) || item.type.includes(search)
-  );
+  useEffect(() => {
+    handleDistrictClick();
+  }, [selectedProvince])
 
   return (
     <div className="w-full">
-      <Header name="전국 체육시설 종합 분석" isSearchBar={true}/>
-      <div className="bg-linear-to-r from-blue-600 to-indigo-700 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden group m-3">
+      <Header name="전국 체육시설 종합 분석" isSearchBar={true} />
+      <div className="bg-linear-to-r from-blue-600 to-indigo-700 p-6 rounded-3xl text-white shadow-lg relative overflow-hidden groups">
         <div className="absolute -right-10 -bottom-10 opacity-10 group-hover:scale-110 transition-transform duration-700">
           <ShieldCheck size={200} />
         </div>
@@ -130,10 +94,10 @@ export default function DashBoardPage() {
           </div>
         )}
       </div>
-      <div className="m-3">
+      <div className="my-5">
         <DistrictCnt />
       </div>
-      <div className="flex m-3">
+      <div className="flex my-3">
         <div className="w-130 bg-white border-gray-200 p-5 rounded-3xl border shadow-sm flex flex-col mr-3">
           <div className="flex justify-between">
             <h1 className="text-xl font-bold">지역 선택</h1>
@@ -142,7 +106,10 @@ export default function DashBoardPage() {
               Interactive Map
             </div>
           </div>
-          <KoreaMap />
+          <KoreaMap
+            selectedProvince={selectedProvince}
+            onProvinceClick={(name) => setSelectedProvince(name)}
+          />
           <div className="mt-6 pt-6 border-t border-gray-100">
             <div className="flex justify-between items-center mb-2">
               <span className="text-xs font-bold text-gray-400">전국 대비 시설 점유율</span>
@@ -162,20 +129,21 @@ export default function DashBoardPage() {
               <p className="text-sm text-gray-400 font-medium">전체 시설 종목 및 행정구역 분석</p>
             </div>
           </div>
-          <PacililtyChart />
+          <FacilityChart province={selectedProvince} />
           <SafetyPeriod />
         </div>
       </div>
-      <div className="m-3 space-y-4">
+      <div className="my-5 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <Trophy size={20} className="text-yellow-500" />
-            서울특별시 시설 목록
+            {selectedProvince} 시설 목록
           </h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredItems.slice(0, 8).map(item => (
-            <FacilityCard key={item.id} facility={item} />
+          {isCheck && facilities.slice(0, 8).map(item => (
+            //{isCheck && filteredFacilities.slice(0, 8).map(item => (
+            <FacilityCard key={item.fid} facility={item} />
           ))}
         </div>
       </div>

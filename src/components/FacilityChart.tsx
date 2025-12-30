@@ -132,7 +132,7 @@ const CustomTooltip = ({ active, payload }: any) => {
     );
 };
 
-const FacilityChart = () => {
+export default function FacilityChart({province} : {province : string})  {
     const [showAll, setShowAll] = useState(false);
 
     const barChartData = useMemo(() => 
@@ -223,5 +223,3 @@ const FacilityChart = () => {
         </div>
     );
 };
-
-export default FacilityChart;

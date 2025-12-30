@@ -3,7 +3,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import KoreaMap from "@/components/KoreaMap";
 import DistrictCnt from "@/components/DistrictCnt";
-import PacililtyChart from "@/components/PacililtyChart"
+import PacililtyChart from "@/components/FacilityChart"
 import { IoSearch } from "react-icons/io5";
 
 export default function Home() {
@@ -14,7 +14,7 @@ export default function Home() {
         <div className="w-130 flex flex-col mx-3 justify-end">
           <div className="border-2 border-gray-200 rounded-2xl py-5 px-1">
             <h1 className="text-2xl font-bold ml-10">전국공공체육시설 지도</h1>
-            <KoreaMap />
+            {/* <KoreaMap /> */}
           </div>
         </div>
         

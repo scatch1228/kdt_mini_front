@@ -12,7 +12,7 @@ type HeaderProps = {
 export default function Header({ name, isSearchBar }: HeaderProps) {
   return (
     <header className='h-25 flex justify-between items-center'>
-      <div className='container mx-auto flex flex-col'>
+      <div className='w-full mx-auto flex flex-col'>
         <div className='text-3xl font-bold '>{name}</div>
       </div>
       {isSearchBar ?
