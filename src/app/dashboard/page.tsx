@@ -2,13 +2,13 @@
 
 import Header from "@/components/Header";
 import KoreaMap from "@/components/KoreaMap";
-import DistrictCnt from "@/components/DistrictCnt";
+import ProvinceCnt from "@/components/ProvinceCnt";
 import FacilityChart from "@/components/FacilityChart"
 import SafetyPeriod from "@/components/SafetyPeriod";
 import { useMemo, useState, useEffect, useTransition } from "react";
 import { generateAnalysis } from "./actions";
 import ReactMarkdown from 'react-markdown';
-import { Accessibility, ChevronRight, History, MapPin, ShieldCheck, Sparkles, Trophy } from "lucide-react";
+import { ShieldCheck, Sparkles, Trophy } from "lucide-react";
 import FacilityCard from "@/components/FacilityCard";
 import FacilityData from "@/data/facility.json"
 import { FacilityType } from "@/type/FacilityType"
@@ -37,7 +37,7 @@ export default function DashBoardPage() {
   const [facilityList, setFacilityList] = useState<FacilityType[]>([]);
   const facilities = useMemo(() => FacilityData, []);
 
-  const handleDistrictClick = async () => {
+  const handleProvinceClick = async () => {
     const districtData = {
       regionName: selectedProvince,
       activeRegion: 20,
@@ -60,7 +60,7 @@ export default function DashBoardPage() {
   }
 
   useEffect(() => {
-    handleDistrictClick();
+    handleProvinceClick();
   }, [selectedProvince])
 
   return (
@@ -74,7 +74,7 @@ export default function DashBoardPage() {
           <div className="p-1.5 bg-white/20 backdrop-blur rounded-lg">
             <Sparkles size={18} className="text-yellow-300" />
           </div>
-          <h3 className="font-bold text-lg">시설 통합 안전 진단</h3>
+          <h3 className="font-bold text-lg">{selectedProvince} 시설 통합 안전 진단</h3>
         </div>
         {isPending && (
           <div className="flex justify-center items-center">
@@ -95,13 +95,12 @@ export default function DashBoardPage() {
         )}
       </div>
       <div className="my-5">
-        <DistrictCnt />
+        <ProvinceCnt />
       </div>
       <div className="flex my-3">
         <div className="w-130 bg-white border-gray-200 p-5 rounded-3xl border shadow-sm flex flex-col mr-3">
           <div className="flex justify-between">
             <h1 className="text-xl font-bold">지역 선택</h1>
-            <button onClick={handleDistrictClick}>함 눌러보던가</button>
             <div className="flex items-center text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg uppercase tracking-wider">
               Interactive Map
             </div>

@@ -26,7 +26,7 @@ const StatBox = ({ icon, label, value, color }: { icon: React.ReactNode; label: 
     );
 };
 
-export default function DistrictCnt({}) {
+export default function ProvinceCnt({}) {
     return (
         <div className="flex flex-wrap gap-4">
             <StatBox icon={<Dumbbell />} label="총 시설수" value={`500개`} color="blue" />
