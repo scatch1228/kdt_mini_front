@@ -13,12 +13,13 @@ import FacilityCard from "@/components/FacilityCard";
 import FacilityData from "@/data/facility.json"
 import { FacilityType } from "@/type/FacilityType"
 
-const FACILITY_TYPES = [
-  '축구장', '테니스장', '수영장', '체육관', '야구장', '골프연습장', '국궁장',
-  '궁도장', '게이트볼장', '족구장', '배드민턴장', '탁구장', '볼링장', '당구장',
-  '인라인스케이트장', '사격장', '승마장', '요트장', '빙상장', '조정장', '카누장',
-  '육상경기장', '씨름장', '유도장', '검도장', '암벽등반장'
-];
+type CityCountData = [string, number];
+
+interface RegionData {
+  name: string;
+  count: number;
+  percentage: number;
+}
 
 export default function DashBoardPage() {
   // 선택된 지역 상태 (기본값: 서울특별시)
@@ -31,11 +32,51 @@ export default function DashBoardPage() {
 
   const [search, setSearch] = useState('');
 
+  const [regionData, setRegionData] = useState<RegionData[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const [provinceValue, setProvinceValue] = useState(0);
+
   const [summary, setSummary] = useState('');
   const [isPending, startTransition] = useTransition();
   const [isCheck, setIsCheck] = useState(false);
   const [facilityList, setFacilityList] = useState<FacilityType[]>([]);
   const facilities = useMemo(() => FacilityData, []);
+
+  const handleFacilityShare = async () => {
+    //console.log(process.env.NEXT_PUBLIC_BACKEND_URL + "/count");
+    try {
+      const resp = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/count`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store'
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const total = data.count_all[0][0];
+        setTotalCount(total);
+
+        const processed = data.city_count_list.map(([name, count]: CityCountData) => {
+          return {
+            name,
+            count,
+            percentage: Number((count / total) * 100).toFixed(0)
+          };
+        });
+        setRegionData(processed);
+
+        const initialRegion = processed.find((item: { name: string; }) => item.name === selectedProvince);
+        if (initialRegion) {
+          setProvinceValue(initialRegion.percentage);
+        }
+        //console.log(processed);
+      }
+    } catch (error) {
+      console.error('Error fetching todos:', error);
+    }
+  };
 
   const handleProvinceClick = async () => {
     const districtData = {
@@ -44,20 +85,31 @@ export default function DashBoardPage() {
       facilityCnt: 500,
       seismicRate: 10
     }
+    
+    // 시설 통합 안전 진단 gemini 보내기
+    // startTransition(async () => {
+    //   const result = await generateAnalysis(districtData);
+    //   if (result.ok && result.data) {
+    //     setSummary(result.data);
+    //   } else {
+    //     alert(result.error || 'An unexpected error occurred.');
+    //     setSummary('');
+    //   }
+    // });
 
-    startTransition(async () => {
-      const result = await generateAnalysis(districtData);
-      if (result.ok && result.data) {
-        setSummary(result.data);
-      } else {
-        alert(result.error || 'An unexpected error occurred.');
-        setSummary('');
+    if (regionData.length > 0) {
+      const item = regionData.find(item => item.name === selectedProvince);
+      if (item) {
+        setProvinceValue(item.percentage);
       }
-    });
-
+    }
     setFacilityList(FacilityData);
     setIsCheck(true);
   }
+
+  useEffect(() => {
+    handleFacilityShare();
+  }, [])
 
   useEffect(() => {
     handleProvinceClick();
@@ -95,7 +147,7 @@ export default function DashBoardPage() {
         )}
       </div>
       <div className="my-5">
-        <ProvinceCnt />
+        <ProvinceCnt city={selectedProvince}/>
       </div>
       <div className="flex my-3">
         <div className="w-130 bg-white border-gray-200 p-5 rounded-3xl border shadow-sm flex flex-col mr-3">
@@ -111,12 +163,12 @@ export default function DashBoardPage() {
           />
           <div className="mt-6 pt-6 border-t border-gray-100">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-bold text-gray-400">전국 대비 시설 점유율</span>
-              <span className="text-xs font-bold text-blue-600">25%</span>
+              <span className="text-xs font-bold text-gray-400">{selectedProvince} 전국 대비 시설 점유율</span>
+              <span className="text-xs font-bold text-blue-600">{provinceValue}%</span>
             </div>
             <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
               <div className="bg-blue-600 h-full rounded-full transition-all duration-700 ease-out shadow-sm"
-                style={{ width: `25%` }}
+                style={{ width: `${provinceValue}%` }}
               ></div>
             </div>
           </div>

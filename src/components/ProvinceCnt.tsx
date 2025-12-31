@@ -1,7 +1,7 @@
 'use client';
 
-import React from "react";
-import { Dumbbell, MapIcon, ShieldCheck, Trophy } from 'lucide-react';
+import React, { useEffect } from "react";
+import { Dumbbell, History, MapIcon, ShieldCheck, Trophy } from 'lucide-react';
 
 
 const StatBox = ({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: string; color: string }) => {
@@ -26,13 +26,39 @@ const StatBox = ({ icon, label, value, color }: { icon: React.ReactNode; label: 
     );
 };
 
-export default function ProvinceCnt({}) {
+export default function ProvinceCnt({ city }: { city: string }) {
+
+    const handleProvinceLoad = async () => {
+        console.log(city);
+        console.log(`${process.env.NEXT_PUBLIC_BACKEND_URL}/count/erdsgn?city=${city}`);
+        try {
+            const resp = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/count/erdsgn?${city}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                cache: 'no-store'
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                console.log(data);
+            }
+        } catch (error) {
+            console.error('Error fetching todos:', error);
+        }
+    };
+
+    useEffect(() => {
+        handleProvinceLoad();
+    }, [])
+
     return (
         <div className="flex flex-wrap gap-4">
             <StatBox icon={<Dumbbell />} label="총 시설수" value={`500개`} color="blue" />
             <StatBox icon={<MapIcon />} label="관할 구역" value={`20개 구역`} color="indigo" />
             <StatBox icon={<ShieldCheck />} label="내진설계율" value={`10%`} color="green" />
-            <StatBox icon={<Trophy />} label="이용 만족도" value="3.5 / 5" color="orange" />
+            {/* <StatBox icon={<Trophy />} label="이용 만족도" value="3.5 / 5" color="orange" />/ */}
+            <StatBox icon={<History />} label="평균 준공 연차" value="30.2 년" color="orange" />/
         </div>
     );
 }
