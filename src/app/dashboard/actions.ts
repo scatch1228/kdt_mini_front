@@ -1,20 +1,21 @@
 "use server";
 
 type districtData = {
-  regionName : string,
-  activeRegion : number,
-  facilityCnt : number,
-  seismicRate : number,
+  city : string,
+  city_count_total : number,
+  number_of_guguns : number,
+  erdsgn : number,
+  avg_old : number,
 };
 
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_KEY;
 
-export async function generateAnalysis({regionName, activeRegion, facilityCnt, seismicRate} : districtData): Promise<{ ok: boolean; data?: string; error?: string }> {
+export async function generateAnalysis({city, city_count_total, number_of_guguns, erdsgn, avg_old} : districtData): Promise<{ ok: boolean; data?: string; error?: string }> {
   if (!apiKey) {
     return { ok: false, error: "Google Generative AI Key is missing" };
   }
 
-  const prompt = `${regionName} 공공체육시설 현황: 시설 ${activeRegion}개, ${facilityCnt}개 종목 운영 중. 내진설계 ${seismicRate}%, 시설 노후도와 종목 다양성을 고려하여 정책 제언을 포함한 리포트를 3문장 이내로 작성해줘.`;
+  const prompt = `너는 도시 인프라 안전 진단 및 공공 정책 전문가야. "${city} 행정 구역의 현황 : 시설 ${city_count_total}개, ${number_of_guguns}개 관할구역. 내진설계 시설 ${erdsgn}개, 시설 노후도 ${avg_old}%" 이 데이터를 분석하여 ${city}의 '공공 체육 시설 안전 진단 리포트'를 3문장 이내로 작성해줘.`
   const maxRetries = 3;
   const retryDelay = 1000; // 1 second
 

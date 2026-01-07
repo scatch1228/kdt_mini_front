@@ -1,32 +1,57 @@
 'use client';
 
 import { History, AlertTriangle } from 'lucide-react';
-import { useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 
-type DateItem = {
-    name: string;
-    value: number;
+type DateType = {
+    new: number;
+    mid: number;
+    old: number;
+    city: string;
 };
 
-const periodData: DateItem[] = [
-    { name: 'new', value: 50 },
-    { name: 'mid', value: 200 },
-    { name: 'old', value: 350 },
-];
-
-export default function SafetyPeriod() {
+export default function SafetyPeriod({ city }: { city: string }) {
+    const [tdata, setTData] = useState<DateType | null>(null);
+    
     const ageData = useMemo(() => {
-        const buckets = { '신축 (10년내)': 0, '보통 (10-25년)': 0, '노후 (25년이상)': 0 };
+        if (!tdata) return [];
 
-        periodData.forEach(i => {
-            if (i.name == 'new') buckets['신축 (10년내)'] = i.value;
-            else if (i.name == 'mid') buckets['보통 (10-25년)'] = i.value;
-            else buckets['노후 (25년이상)'] = i.value;
-        });
-        return Object.entries(buckets).map(([key, val]) => ({ label: key, count: val }));
-    }, []);
+        const buckets = [
+            { label: '신축 (10년내)', count: tdata.new, color: 'bg-blue-500' },
+            { label: '보통 (10-25년)', count: tdata.mid, color: 'bg-indigo-400' },
+            { label: '노후 (25년이상)', count: tdata.old, color: 'bg-amber-500' },
+        ];
+        return buckets;
+    }, [tdata]);
 
-    const totalValue = periodData.reduce((sum, item) => sum + item.value, 0);
+    const totalValue = useMemo(() => {
+        if (!tdata) return 0;
+        return tdata.new + tdata.mid + tdata.old;
+    }, [tdata]);
+
+    const handlePeriodLoad = useCallback(async () => {
+        if (!city) return;
+
+        try {
+            const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/count/old?city=${encodeURIComponent(city)}`;
+            const resp = await fetch(url, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+                cache: 'no-store'
+            });
+
+            if (resp.ok) {
+                const result: DateType = await resp.json();
+                setTData(result);
+            }
+        } catch (error) {
+            console.error('Error fetching period data:', error);
+        }
+    }, [city]);
+
+    useEffect(() => {
+        handlePeriodLoad();
+    }, [handlePeriodLoad]);
 
     return (
         <div className=" mt-5 pt-5 border-t border-gray-100">

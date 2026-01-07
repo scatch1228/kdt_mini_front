@@ -8,7 +8,7 @@ import {
     ResponsiveContainer,
     Cell,
 } from 'recharts';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { BarChart3, PieChartIcon, ChevronUp, ChevronDown } from "lucide-react";
 
 type BarChartItem = {
@@ -20,40 +20,6 @@ type BarChartItem = {
     };
 };
 
-const facilityCount: BarChartItem[] = [
-    { name : '기타시설', value : 20},
-    { name : '간이운동장', value : 15},
-    { name : '전천후게이트볼장', value : 32},
-    { name : '야구장', value : 2},
-    { name : '국궁장', value : 1},
-    { name : '수영장', value : 2},
-    { name : '구기체육관', value : 8},
-    { name : '생활체육관', value : 3},
-    { name : '축구장', value : 4},
-    { name : '인공암벽장', value : 1},
-    { name : '테니스장', value : 1},
-    { name : '골프연습장', value : 0},
-    { name : '기타체육시설(체력단련장)', value : 9},
-    { name : '풋살장', value : 2},
-    { name : '골프장', value : 0},
-    { name : '롤러스케이트장', value : 0},
-    { name : '파크골프장', value : 1},
-    { name : '육상경기장', value : 20},
-    { name : '빙상장', value : 0},
-    { name : '승마장', value : 0},
-    { name : '사격장', value : 1},
-    { name : '투기체육관', value : 1},
-    { name : '하키장', value : 1},
-    { name : '씨름장', value : 1},
-    { name : '양궁장', value : 2},
-    { name : '사이클경기장', value : 0},
-];
-
-const chartData = Object.entries(facilityCount).map(([name, value]) => ({
-    name,
-    count: value,
-}));
-
 type PieChartItem = {
     name: string;
     value: number;
@@ -62,23 +28,6 @@ type PieChartItem = {
         items?: string[];
     };
 };
-
-const ProvincesCount: PieChartItem[] = [
-    { name: '강남구', value: 12 },
-    { name: '강동구', value: 25 },
-    { name: '강북구', value: 10 },
-    { name: '강서구', value: 8 },
-    { name: '관악구', value: 50 },
-    { name: '광진구', value: 20 },
-    { name: '구로구', value: 116 },
-    { name: '금천구', value: 70 },
-    { name: '도봉구', value: 8 },
-    { name: '서초구', value: 25 },
-    { name: '성북구', value: 60 },
-    { name: '용산구', value: 6 },
-    { name: '은평구', value: 27 },
-    { name: '종로구', value: 70 },
-];
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#e5e7eb'];
 
@@ -132,19 +81,57 @@ const CustomTooltip = ({ active, payload }: any) => {
     );
 };
 
-export default function FacilityChart({province} : {province : string})  {
+export default function FacilityChart({ city }: { city: string }) {
     const [showAll, setShowAll] = useState(false);
+    const [provinces, setProvinces] = useState<PieChartItem[]>([]);
+    const [facilities, setFacilities] = useState<BarChartItem[]>([]);
 
-    const barChartData = useMemo(() => 
-        sortedItem(facilityCount), []        
+    const handleChartLoad = useCallback(async () => {
+        if (!city) return;
+        console.log(`${process.env.NEXT_PUBLIC_BACKEND_URL}/count?city=${city}`);
+        try {
+            const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/count?city=${city}`;
+            const resp = await fetch(url, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+                cache: 'no-store'
+            });
+
+            if (resp.ok) {
+                const data = await resp.json();
+                console.log(data);
+                const formattedProvinces: PieChartItem[] = data.types_in_city_count.map(
+                    ([name, value]: [string, number]) => ({ name, value })
+                );
+
+                const formattedFacilities: BarChartItem[] = data.guguns_in_city_count.map(
+                    ([name, value]: [string, number]) => ({ name, value })
+                );
+
+                setProvinces(formattedProvinces);
+                setFacilities(formattedFacilities);
+            }
+        } catch (error) {
+            console.error('Error fetching province data:', error);
+        }
+    }, [city]);
+
+    useEffect(() => {
+        handleChartLoad();
+    }, [handleChartLoad]);
+
+    const barChartData = useMemo(() =>
+        sortedItem(facilities), [facilities]
     );
 
     const pieChartData = useMemo(
-        () => getTop7WithOthers(ProvincesCount),
-        []
+        () => getTop7WithOthers(provinces),
+        [provinces]
     );
 
-    const maxCount = Math.max(...barChartData.map(s => s.value));
+    const maxCount = useMemo(() => {
+        return barChartData.length > 0 ? Math.max(...barChartData.map(s => s.value)) : 1;
+    }, [barChartData]);
 
     return (
         <div className='grid grid-cols-1 md:grid-cols-2 gap-12'>
@@ -185,39 +172,41 @@ export default function FacilityChart({province} : {province : string})  {
                     <h4 className="text-sm font-bold text-gray-700">시군구별 시설 비중 Top 7</h4>
                     <PieChartIcon size={14} className="text-gray-300" />
                 </div>
-                <div className="flex-1 w-full min-h-55">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie
-                                data={pieChartData}
-                                cx="50%"
-                                cy="50%"
-                                startAngle={90}
-                                endAngle={-450}
-                                innerRadius={50}
-                                outerRadius={75}
-                                paddingAngle={5}
-                                dataKey="value"
-                            // animationDuration={1500}
-                            // animationBegin={200}
-                            >
-                                {pieChartData.map((_, index) => (
-                                    <Cell
-                                        key={`cell-${index}`}
-                                        fill={COLORS[index % COLORS.length]}
-                                        stroke="none"
-                                    />
-                                ))}
-                            </Pie>
-                            <Tooltip content={<CustomTooltip />} />
-                            <Legend
-                                verticalAlign="bottom"
-                                height={36}
-                                iconType="circle"
-                                wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px' }}
-                            />
-                        </PieChart>
-                    </ResponsiveContainer>
+                <div className="w-full min-h-55 ">
+                    {pieChartData && pieChartData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    data={pieChartData}
+                                    cx="50%"
+                                    cy="50%"
+                                    startAngle={90}
+                                    endAngle={-450}
+                                    innerRadius={50}
+                                    outerRadius={75}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    {pieChartData.map((_, index) => (
+                                        <Cell
+                                            key={`cell-${index}`}
+                                            fill={COLORS[index % COLORS.length]}
+                                            stroke="none"
+                                        />
+                                    ))}
+                                </Pie>
+                                <Tooltip content={<CustomTooltip />} />
+                                <Legend
+                                    verticalAlign="bottom"
+                                    height={36}
+                                    iconType="circle"
+                                    wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px' }}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="flex items-center justify-center h-full">데이터 로딩 중...</div>
+                    )}
                 </div>
             </div>
         </div>

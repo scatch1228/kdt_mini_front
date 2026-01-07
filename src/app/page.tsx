@@ -1,9 +1,6 @@
 import Image from "next/image";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import KoreaMap from "@/components/KoreaMap";
-import DistrictCnt from "@/components/ProvinceCnt";
-import PacililtyChart from "@/components/FacilityChart"
 import { IoSearch } from "react-icons/io5";
 
 export default function Home() {
