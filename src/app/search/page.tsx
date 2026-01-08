@@ -1,9 +1,10 @@
 'use client';
 
 import Header from "@/components/Header";
-import { Filter, Search } from "lucide-react";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { ChevronLeft, ChevronRight, Filter, Search } from "lucide-react";
+import { useState, useEffect, useRef, useMemo, useTransition, startTransition } from "react";
 import FacilityData from "@/data/facility.json"
+import { getFacilities, SortOption, FacilityResponse } from "./actions";
 import { FacilityType } from "@/type/FacilityType";
 import FacilityCard from "@/components/FacilityCard";
 import ProvinceCategory from "@/data/province.json"
@@ -13,32 +14,58 @@ import FacilityCategory from "@/data/type.json"
 export default function SearchPage() {
     // 상세 목록 List
     const [tdata, setTData] = useState<FacilityType[]>([]);
-    const [isCheck, setIsCheck] = useState(false);
+    const [isPending, startTransition] = useTransition();
     const [listCnt, setListCnt] = useState(0);
-    
+
+    //페이지네이션 관련 상태
+    const [pageNo, setPageNo] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+
     // 상세 검색 카테고리
     const [searchWord, setSearchWord] = useState("");
     const inputRef = useRef<HTMLInputElement>(null)
     const [sel1, setSel1] = useState("");
-    const selectRef1 = useRef<HTMLSelectElement>(null);
-    const [districtOptions, setDistrictOptions] = useState<string[]>([]);
     const [sel2, setSel2] = useState("");
-    const selectRef2 = useRef<HTMLSelectElement>(null);
     const [sel3, setSel3] = useState("");
-    const selectRef3 = useRef<HTMLSelectElement>(null);
-    const [selectedSort, setSelectedSort] = useState("name");
+    const [selectedSort, setSelectedSort] = useState<SortOption>("name");
+    const [districtOptions, setDistrictOptions] = useState<string[]>([]);
 
-    const options = [
+    const options: { id: SortOption; label: string }[] = [
         { id: "name", label: "이름순" },
-        { id: "rating", label: "평점순" },
-        { id: "latest", label: "최신순" },
+        { id: "star", label: "평점순" },
+        { id: "createDate", label: "최신순" },
     ];
 
-    const SearchClick = async () => {
-        setTData(FacilityData);
-        setListCnt(20);
-        console.log("name = " + searchWord + "\ncity = " + sel1 + "\ngugun = " + sel2 + "\ntype = " + sel3 + "\nsort = " + selectedSort);
-        setIsCheck(true);
+    const SearchClick = (targetPage: number) => {
+        startTransition(async () => {
+            const params = {
+                name: searchWord || undefined,
+                city: sel1 || undefined,
+                gugun: sel2 || undefined,
+                type: sel3 || undefined,
+                sort: selectedSort,
+                pageNo: targetPage,
+            };
+
+            try {
+                const result = await getFacilities(params);
+                if (result?.facility) {
+                    setTData(result.facility.content);
+                    setListCnt(result.facility.totalElements);
+                    setTotalPages(result.facility.totalPages);
+                    setPageNo(result.facility.number);
+                } else {
+                    setTData([]);
+                    setListCnt(0);
+                    setTotalPages(0);
+                    setPageNo(0);
+                }
+            } catch (error) {
+                console.error("Failed to fetch facilities:", error);
+                setTData([]);
+                setListCnt(0);
+            }
+        });
     }
 
     const handleSel1Change = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -55,6 +82,25 @@ export default function SearchPage() {
         return ProvinceCategory;  // 또는 API 데이터
     }, []);
 
+    const handleSearchClick = () => {
+        SearchClick(0); 
+    };
+
+    const handlePageChange = (newIdx: number) => {
+        if (newIdx >= 0 && newIdx < totalPages) {
+            SearchClick(newIdx);
+            window.scrollTo(0, 0); // 이동 시 상단 스크롤
+        }
+    };
+
+    const pageNumbers = useMemo(() => {
+        const numbers = [];
+        const start = Math.max(0, pageNo - 2);
+        const end = Math.min(totalPages - 1, start + 4);
+        for (let i = start; i <= end; i++) numbers.push(i);
+        return numbers;
+    }, [pageNo, totalPages]);
+
     return (
         <div className="w-full">
             <Header name="상세 시설 검색" isSearchBar={false} />
@@ -66,7 +112,7 @@ export default function SearchPage() {
                         </div>
                         <input type="text" placeholder="시설 이름 및 키워드 검색..." ref={inputRef} value={searchWord}
                             className="w-full h-16 pl-12 bg-white text-lg px-3 border-2 border-gray-200 rounded-3xl focus:outline-none
-                                     focus:border-blue-500  active:border-blue-500 transition-all" 
+                                     focus:border-blue-500  active:border-blue-500 transition-all"
                             onChange={(e) => setSearchWord(e.target.value)}
                         />
                     </div>
@@ -79,10 +125,9 @@ export default function SearchPage() {
                         <div className="flex gap-7">
                             <div className="relative w-60">
                                 <label className="text-[14px] font-bold text-gray-500 uppercase tracking-widest ml-1">행정구역(도ㆍ광역시)</label>
-                                <select ref={selectRef1} value={sel1}
+                                <select value={sel1} onChange={(e) => { handleSel1Change(e); }}
                                     className="w-full p-3 bg-gray-50 rounded-2xl text-sm font-bold outline-none
                                                 border border-transparent focus:ring-2 ring-blue-200 transition-all"
-                                    onChange={(e) => { handleSel1Change(e); }}
                                 >
                                     <option value="">전체</option>
                                     {
@@ -94,10 +139,9 @@ export default function SearchPage() {
                             </div>
                             <div className="w-60">
                                 <label className="text-[14px] font-bold text-gray-500 uppercase tracking-widest ml-1">관할구역(시ㆍ도ㆍ군)</label>
-                                <select ref={selectRef2} value={sel2}
+                                <select value={sel2} onChange={(e) => { setSel2(e.target.value) }}
                                     className="w-full p-3 bg-gray-50 rounded-2xl text-sm font-bold outline-none
                                                 border border-transparent focus:ring-2 ring-blue-200 transition-all"
-                                    onChange={(e) => { setSel2(e.target.value) }}
                                 >
                                     <option value="">전체</option>
                                     {
@@ -109,10 +153,9 @@ export default function SearchPage() {
                             </div>
                             <div className="w-60">
                                 <label className="text-[14px] font-bold text-gray-500 uppercase tracking-widest ml-1">시설종목</label>
-                                <select ref={selectRef3} value={sel3}
+                                <select value={sel3} onChange={(e) => { setSel3(e.target.value) }}
                                     className="w-full p-3 bg-gray-50 rounded-2xl text-sm font-bold outline-none
                                                 border border-transparent focus:ring-2 ring-blue-200 transition-all"
-                                    onChange={(e) => { setSel3(e.target.value) }}
                                 >
                                     <option value="">전체</option>
                                     {
@@ -138,7 +181,7 @@ export default function SearchPage() {
                                             name="sortOption"
                                             value={option.id}
                                             checked={selectedSort === option.id}
-                                            onChange={(e) => setSelectedSort(e.target.value)}
+                                            onChange={(e) => setSelectedSort(e.target.value as SortOption)}
                                             className="w-4 h-4 accent-blue-600"
                                         />
                                         {option.label}
@@ -148,7 +191,7 @@ export default function SearchPage() {
                         </div>
                     </div>
                     <div className="w-25 bg-blue-400 border-gray-100 text-white rounded-2xl hover:bg-blue-600 cursor-pointer transition-all">
-                        <button className="w-full h-full" onClick={SearchClick}>시설 검색</button>
+                        <button className="w-full h-full" disabled={isPending} onClick={handleSearchClick}>{isPending ? "검색 중..." : "시설 검색"}</button>
                     </div>
                 </div>
             </div>
@@ -158,12 +201,54 @@ export default function SearchPage() {
                 </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
-                {isCheck ?
+                {isPending && (
+                    <div className="flex h-full justify-center items-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mr-10"></div>
+                        <p className="text-sm lg:text-base leading-relaxed text-blue-50 font-medium max-w-5xl">
+                            검색 중 . . .
+                        </p>
+                    </div>
+                )}
+                {tdata && !isPending && (
                     tdata.map(item => (
                         <FacilityCard key={item.fid} facility={item} />
                     ))
-                    : <></>
-                }
+                )}
+            </div>
+            <div className="flex justify-end mx-10 mb-5">
+                {totalPages > 0 && !isPending && (
+                    <div className="flex justify-center items-center gap-2 mt-12">
+                        <button 
+                            onClick={() => handlePageChange(pageNo - 1)}
+                            disabled={pageNo === 0}
+                            className="p-2 rounded-lg border border-gray-200 disabled:opacity-30 hover:bg-gray-50"
+                        >
+                            <ChevronLeft size={20} />
+                        </button>
+
+                        {pageNumbers.map((num) => (
+                            <button
+                                key={num}
+                                onClick={() => handlePageChange(num)}
+                                className={`w-10 h-10 rounded-lg text-sm font-bold transition-all
+                                    ${pageNo === num 
+                                        ? "bg-blue-500 text-white shadow-md shadow-blue-100" 
+                                        : "bg-white text-gray-600 border border-gray-100 hover:border-blue-300"
+                                    }`}
+                            >
+                                {num + 1}
+                            </button>
+                        ))}
+
+                        <button 
+                            onClick={() => handlePageChange(pageNo + 1)}
+                            disabled={pageNo === totalPages - 1}
+                            className="p-2 rounded-lg border border-gray-200 disabled:opacity-30 hover:bg-gray-50"
+                        >
+                            <ChevronRight size={20} />
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

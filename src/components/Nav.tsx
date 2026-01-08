@@ -6,13 +6,6 @@ import { Activity, LayoutDashboard, LogIn, LogOut, Search } from "lucide-react";
 import { useAtomValue } from "jotai"
 import { isLoginAtom } from "../atoms/atoms"
 
-type SidebarProps = {
-    icon: React.ReactNode,
-    label: string,
-    active?: boolean,
-    href: string,
-}
-
 export default function Nav() {
     const isLogin = useAtomValue(isLoginAtom) ;
     const pathname = usePathname();
@@ -52,7 +45,7 @@ export default function Nav() {
                 </Link>
                 :
                 <Link
-                    href="/"
+                    href="/signin"
                     className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all text-gray-400 hover:bg-gray-50 hover:text-gray-600`}
                 >
                     <LogIn size={20} />

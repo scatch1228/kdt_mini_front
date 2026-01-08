@@ -6,7 +6,7 @@ import ProvinceCnt from "@/app/dashboard/components/ProvinceCnt";
 import FacilityChart from "@/app/dashboard/components/FacilityChart"
 import SafetyPeriod from "@/app/dashboard/components/SafetyPeriod";
 import { useMemo, useState, useEffect, useTransition, useCallback } from "react";
-import { generateAnalysis } from "./actions";
+import { generateAnalysis, getFacilities, SortOption } from "./actions";
 import ReactMarkdown from 'react-markdown';
 import { ShieldCheck, Sparkles, Trophy } from "lucide-react";
 import FacilityCard from "@/components/FacilityCard";
@@ -47,19 +47,19 @@ export default function DashBoardPage() {
   const [provinceValue, setProvinceValue] = useState(0);
 
   // 선택된 행정구역 최신 데이터 8개
-  const [isCheck, setIsCheck] = useState(false);
   const [facilityList, setFacilityList] = useState<FacilityType[]>([]);
-  const facilities = useMemo(() => FacilityData, []);
+  //const facilities = useMemo(() => FacilityData, []);
 
   // Gemini 3.0 안전 진단 레포트 관련 메서드
   const handleDataLoad = useCallback((data: any) => {
     setProvinceData(data);
   }, []);
 
+  // 지도 클릭 시 이벤트
   useEffect(() => {
     if (!provinceData) return;
-    
-    startTransition(async() => {
+
+    startTransition(async () => {
       // console.log("새로운 지역 데이터 분석 시작:", provinceData);
       // const result = await generateAnalysis(provinceData);
       // if (result.ok && result.data) {
@@ -69,6 +69,29 @@ export default function DashBoardPage() {
       //   setSummary('');
       // }
       setSummary(`너는 도시 인프라 안전 진단 및 공공 정책 전문가야. "${provinceData.city} 행정 구역의 현황 : 시설 ${provinceData.city_count_total}개, ${provinceData.number_of_guguns}개 관할구역. 내진설계 시설 ${provinceData.erdsgn}개, 시설 노후도 ${provinceData.avg_old}%" 이 데이터를 분석하여 ${provinceData.city}의 '공공 체육 시설 안전 진단 리포트'를 3문장 이내로 작성해줘.`);
+
+      const sorted = "star" as SortOption;
+
+      const params = {
+        name: undefined,
+        city: provinceData.city || undefined,
+        gugun: undefined,
+        type: undefined,
+        sort: sorted,
+        pageNo: 0,
+      };
+
+      try {
+        const result = await getFacilities(params);
+        if (result?.facility) {
+          setFacilityList(result.facility.content);
+        } else {
+          setFacilityList([]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch facilities:", error);
+        setFacilityList([]);
+      }
     });
   }, [provinceData]);
 
@@ -120,13 +143,11 @@ export default function DashBoardPage() {
         setProvinceValue(item.percentage);
       }
     }
-    setFacilityList(FacilityData);
-    setIsCheck(true);
   }, [selectedProvince, regionData])
 
   useEffect(() => {
-  handleProvinceClick();
-}, [handleProvinceClick]);
+    handleProvinceClick();
+  }, [handleProvinceClick]);
 
   return (
     <div className="w-full">
@@ -208,7 +229,7 @@ export default function DashBoardPage() {
           </h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {isCheck && facilities.slice(0, 8).map(item => (
+          {!isPending && facilityList.slice(0, 8).map(item => (
             <FacilityCard key={item.fid} facility={item} />
           ))}
         </div>

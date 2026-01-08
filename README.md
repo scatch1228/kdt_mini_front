@@ -1,4 +1,9 @@
 
+* 2026-01-08 업데이트
+ 1. backend 연동
+   - "/dashboard" page Card List
+   - "/search" page Card List, Pagable
+
 * 2026-01-05 업데이트
  1. backend 연동
    - "/dashboard" page 지도 색상(행정구역별 시설 count)
@@ -8,6 +13,8 @@
  2. "/dashboard" page 수정
    - 파이 차트 오류 수정 (높이 고정 값으로 설정)
    - gemini API 시설 안전 진단 Report 작성 컴포넌트 height 고정. (화면 흔들림 방지)
+ 3. "/dashboard" page Server Component 변경작업
+   - 프로젝트 파일 따로 빼서 진행 중.
 
 
 * 2025-12-31 업데이트
