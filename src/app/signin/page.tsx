@@ -12,37 +12,29 @@ export interface LoginRequest {
     password: string;
 }
 
-export interface LoginResponse {
-    mid: string;
-    alias: string;
-}
-
 export default function SigninPage() {
 
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
     const [formData, setFormData] = useState({
-        userId: '',
-        pwd: '',
-        alias: ''
+        mid: '',
+        pwd: ''
     });
 
     const loginClick = async () => {
 
+        console.log(formData);
+
         if (isLoading) return;
-
         setIsLoading(true);
-
-        const username = formData.userId;
-        const password = formData.pwd;        
 
         try {
             const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/login`;
             const resp = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify(formData),
                 credentials: 'include',
             });
 
@@ -74,14 +66,20 @@ export default function SigninPage() {
                     <div className="absolute ml-5 inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                         <UserRound className="text-gray-400" />
                     </div>
-                    <input type="text" placeholder="Username"
+                    <input type="text" placeholder="Username" value={formData.mid}
+                        onChange={(e) =>
+                            setFormData({ ...formData, mid: e.target.value })
+                        }
                         className="w-full h-12 pl-12 text-lg px-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500  active:border-blue-500 transition-all" />
                 </div>
                 <div className="relative px-5">
                     <div className="absolute ml-5 inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                         <Lock className="text-gray-400" />
                     </div>
-                    <input type="password" placeholder="Password"
+                    <input type="text" placeholder="Password" value={formData.pwd}
+                        onChange={(e) =>
+                            setFormData({ ...formData, pwd: e.target.value })
+                        }
                         className="w-full h-12 pl-12 text-lg px-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500  active:border-blue-500 transition-all" />
                 </div>
                 <div className="relative px-5">
