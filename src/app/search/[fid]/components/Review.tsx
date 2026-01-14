@@ -1,7 +1,8 @@
 'use client';
 
-import { MessageSquare, Star, Trash2 } from 'lucide-react';
+import { MessageSquare, Send, Star, Trash2 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 interface ReviewProps {
     fid: string;
@@ -39,6 +40,10 @@ const FractionalStar = ({ percent, id }: { percent: number, id: string }) => {
 export default function ({ fid, star }: ReviewProps) {
 
     const [tdata, setTData] = useState<ReviewType[]>([]);
+    const { isLoggedIn, alias, mid, logout } = useAuth();
+
+    const [newComment, setNewComment] = useState('');
+    const [newRating, setNewRating] = useState(5);
 
     const handleReviewLoad = useCallback(async () => {
         if (!fid) return;
@@ -48,7 +53,8 @@ export default function ({ fid, star }: ReviewProps) {
             const resp = await fetch(url, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
-                cache: 'no-store'
+                cache: 'no-store',
+                credentials: 'include',
             });
 
             if (resp.ok) {
@@ -64,6 +70,25 @@ export default function ({ fid, star }: ReviewProps) {
     useEffect(() => {
         handleReviewLoad();
     }, [handleReviewLoad]);
+
+    const handleSubmitReview = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!isLoggedIn) {
+            alert("로그인이 필요합니다.");
+            return;
+        }
+        if (!newComment.trim()) return;
+        
+        console.log("리뷰 등록!");
+        // fetch 진행 예정
+    };
+
+    const handleDeleteReview = (e: React.FormEvent) => {
+        e.preventDefault(); 
+
+        console.log("리뷰 삭제!");
+        // fetch 진행 예정
+    }
 
     const getFillPercent = (index: number) => {
         const diff = star - index;
@@ -95,6 +120,59 @@ export default function ({ fid, star }: ReviewProps) {
                     </div>
                 </div>
             </div>
+
+            <div className="space-y-4">
+                <div className="flex items-center gap-4 mb-2">
+                    <span className="text-sm font-bold text-gray-700">평점 선택</span>
+                    <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map(i => (
+                            <button
+                                key={i}
+                                type="button"
+                                disabled={!isLoggedIn}
+                                onClick={() => setNewRating(i)}
+                                className={`transition-transform ${isLoggedIn ? 'hover:scale-125' : 'cursor-not-allowed'} focus:outline-none`}
+                            >
+                                <Star size={20} fill={i <= newRating ? "#2563eb" : "none"} className={i <= newRating ? "text-blue-600" : "text-gray-200"} />
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="relative pt-4 rounded-2xl">
+                    <textarea
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        disabled={!isLoggedIn}
+                        placeholder={isLoggedIn ? "시설 이용 후기를 남겨주세요..." : ""}
+                        className={`w-full p-5 bg-gray-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none min-h-25 transition-all
+                            ${!isLoggedIn ? 'blur-sm select-none' : ''}`}
+                    />
+                    
+                    <button
+                        type="submit"
+                        disabled={!isLoggedIn}
+                        className={`absolute right-4 bottom-4 p-3 rounded-xl shadow-lg transition-all flex items-center gap-2 text-sm font-bold
+                            ${isLoggedIn ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+                        onClick={handleSubmitReview}
+                    >
+                        <Send size={16} /> 리뷰 등록
+                    </button>
+
+                    {!isLoggedIn && (
+                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/30 backdrop-blur-[2px] transition-all">
+                            <p className="text-gray-800 font-bold mb-3">로그인 후 리뷰 작성이 가능합니다</p>
+                            <button 
+                                onClick={() => window.location.href = '/signin'}
+                                className="px-6 py-2 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 shadow-md transition-colors"
+                            >
+                                로그인하기
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             <div className="space-y-5 pt-4">
                 {tdata.map(review => (
                     <div key={review.seq} className="p-5 bg-gray-50/50 rounded-2xl border border-gray-100 flex flex-col gap-2 transition-all hover:bg-white hover:border-blue-100">
@@ -115,9 +193,11 @@ export default function ({ fid, star }: ReviewProps) {
                             <div className='flex-1'>
                                 <p className="text-md text-gray-600 leading-relaxed pl-10">{review.cont}</p>
                             </div>
-                            <div className='flex w-20 p-2 justify-end'>
+                            <button 
+                                onClick={handleDeleteReview}
+                                className='flex w-20 p-2 justify-end'>
                                 <Trash2 className='text-gray-500' />
-                            </div>
+                            </button>
                         </div>
                     </div>
                 ))}

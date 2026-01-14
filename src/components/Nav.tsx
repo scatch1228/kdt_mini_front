@@ -5,11 +5,12 @@ import { usePathname } from 'next/navigation'
 import { Activity, LayoutDashboard, LogIn, LogOut, Search } from "lucide-react";
 import { useAtomValue } from "jotai"
 import { isLoginAtom } from "../atoms/atoms"
+import { useAuth } from "@/context/AuthContext";
 
 export default function Nav() {
-    const isLogin = useAtomValue(isLoginAtom) ;
+    const { isLoggedIn, alias, mid, logout } = useAuth();
     const pathname = usePathname();
-    
+
     return (
         <aside className='w-20 2xl:w-55 border-r border-gray-200 bg-white flex flex-col items-center 2xl:items-stretch py-8 sticky top-0 h-screen z-50 transition-all'>
             <div className="flex items-center gap-3 px-6 mb-12">
@@ -34,24 +35,32 @@ export default function Nav() {
                     <span className="hidden 2xl:block text-sm font-semibold">시설 상세 검색</span>
                 </Link>
             </nav>
-            <div className="px-4 pb-4 space-y-2 border-t border-gray-200 pt-6">
-                {isLogin ? 
-                <Link
-                    href="/"
-                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all text-gray-400 hover:bg-gray-50 hover:text-gray-600`}
-                >
-                    <LogOut size={20} />
-                    <span className="hidden 2xl:block text-sm font-semibold">로그아웃</span>
-                </Link>
-                :
-                <Link
-                    href="/signin"
-                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all text-gray-400 hover:bg-gray-50 hover:text-gray-600`}
-                >
-                    <LogIn size={20} />
-                    <span className="hidden 2xl:block text-sm font-semibold">로그인</span>
-                </Link>
-                }
+            <div className="px-4 pb-4 h-30 space-y-2 border-t border-gray-200 pt-10">
+                <div className="flex flex-col justify-center items-center text-gray-400">
+                    {
+                        isLoggedIn ? (
+                            <>
+                                <div className="hidden 2xl:block mb-5">
+                                    <p>반갑습니다. {alias}님.</p>
+                                </div>
+                                <button onClick={logout}
+                                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all text-gray-400 hover:bg-gray-50 hover:text-gray-600`}
+                                >
+                                    <LogOut size={20} />
+                                    <span className="hidden 2xl:block text-sm font-semibold">로그아웃</span>
+                                </button>
+                            </>
+                        ) : (
+                            <Link
+                                href="/signin"
+                                className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all text-gray-400 hover:bg-gray-50 hover:text-gray-600`}
+                            >
+                                <LogIn size={20} />
+                                <span className="hidden 2xl:block text-sm font-semibold">로그인</span>
+                            </Link>
+                        )
+                    }
+                </div>
             </div>
         </aside>
     );

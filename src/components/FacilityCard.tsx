@@ -2,13 +2,20 @@
 
 import { ChevronRight, History, MapPin, ShieldCheck, Trophy } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from "next/navigation";
 
 export default function FacilityCard({ facility }: { facility: any }) {
+    const searchParams = useSearchParams();
+    const query = searchParams.toString();
+
+    const href = query
+        ? `/search/${facility.fid}?${query}`
+        : `/search/${facility.fid}`;
 
     const buildYear = facility.createDate.slice(0, 4);
 
     return (
-        <Link href={`/search/${facility.fid}`}
+        <Link href={href}
             className="bg-white p-4 rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all group cursor-pointer relative overflow-hidden">
             {2025 - buildYear >= 30 && (
                 <div className="absolute -right-6 top-3 rotate-45 bg-amber-500 text-white text-[8px] font-bold px-8 py-1 shadow-sm">

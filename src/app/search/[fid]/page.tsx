@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeft, Clock, Info, Map, MapIcon, MapPin, MessageSquare, Phone, Send, ShieldCheck, Star, Trophy } from "lucide-react";
 import Link from "next/link";
 import Review from "./components/Review";
+import BackToSearch from "./components/BackToSearch";
 
 interface FacilityDetailProps {
     params: Promise<{ fid: string }>
@@ -18,7 +19,8 @@ export async function getFacilityDetail(fid: string): Promise<FacilityType | nul
         const resp = await fetch(url, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
-            cache: 'no-store'
+            cache: 'no-store',
+            credentials: 'include',
         });
 
         if (resp.ok) {
@@ -61,12 +63,7 @@ export default async function FacilityDetail({ params }: FacilityDetailProps) {
     return (
         <div className="flex flex-col gap-6 fade-in slide-in-from-bottom-4 duration-500">
             <header className="flex items-center gap-4">
-                <Link
-                    href="/search"
-                    className="p-2.5 bg-white border border-gray-100 rounded-2xl text-gray-500 hover:text-blue-600 hover:shadow-md transition-all"
-                >
-                    <ChevronLeft size={24} />
-                </Link>
+                <BackToSearch />
                 <div>
                     <div className="flex items-center gap-2 mb-1">
                         <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">{facility.type}</span>

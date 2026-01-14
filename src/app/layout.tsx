@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+import { AuthProvider } from "@/context/AuthContext";
 import Nav from "@/components/Nav";
 
 const geistSans = Geist({
@@ -24,6 +25,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+
+
   return (
     <html lang="ko">
       <body
@@ -40,10 +44,12 @@ export default function RootLayout({
           </div>
         </div> */}
         <div className="flex min-h-screen bg-[#f8fafc]">
-          <Nav />
-          <main className='flex-1 p-4 lg:p-8 flex flex-col gap-6 overflow-x-hidden'>
-            {children}
-          </main>
+          <AuthProvider>
+            <Nav />
+            <main className='flex-1 p-4 lg:p-8 flex flex-col gap-6 overflow-x-hidden'>
+              {children}
+            </main>
+          </AuthProvider>
         </div>
       </body>
     </html>

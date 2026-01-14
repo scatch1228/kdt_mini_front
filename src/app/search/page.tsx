@@ -3,6 +3,7 @@
 import Header from "@/components/Header";
 import { ChevronLeft, ChevronRight, Filter, Search } from "lucide-react";
 import { useState, useEffect, useRef, useMemo, useTransition, startTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import FacilityData from "@/data/facility.json"
 import { getFacilities, SortOption, FacilityResponse } from "./actions";
 import { FacilityType } from "@/type/FacilityType";
@@ -17,17 +18,29 @@ export default function SearchPage() {
     const [isPending, startTransition] = useTransition();
     const [listCnt, setListCnt] = useState(0);
 
+    // 대시보드 => 상세검색 파라미터값
+    const searchParams = useSearchParams();
+    const keywordFromUrl = searchParams.get("keyword") ?? "";
+    const router = useRouter();
+
+    // detail page return시 검색어 유지
+    const pageFromUrl = Number(searchParams.get("pageNo") ?? 0);
+    const cityFromUrl = searchParams.get("city") ?? "";
+    const gugunFromUrl = searchParams.get("gugun") ?? "";
+    const typeFromUrl = searchParams.get("type") ?? "";
+    const sortFromUrl = (searchParams.get("sort") as SortOption) ?? "name";
+
     //페이지네이션 관련 상태
-    const [pageNo, setPageNo] = useState(0);
+    const [pageNo, setPageNo] = useState(pageFromUrl);
     const [totalPages, setTotalPages] = useState(0);
 
     // 상세 검색 카테고리
-    const [searchWord, setSearchWord] = useState("");
+    const [searchWord, setSearchWord] = useState(keywordFromUrl);
     const inputRef = useRef<HTMLInputElement>(null)
-    const [sel1, setSel1] = useState("");
-    const [sel2, setSel2] = useState("");
-    const [sel3, setSel3] = useState("");
-    const [selectedSort, setSelectedSort] = useState<SortOption>("name");
+    const [sel1, setSel1] = useState(cityFromUrl);
+    const [sel2, setSel2] = useState(gugunFromUrl);
+    const [sel3, setSel3] = useState(typeFromUrl);
+    const [selectedSort, setSelectedSort] = useState<SortOption>(sortFromUrl);
     const [districtOptions, setDistrictOptions] = useState<string[]>([]);
 
     const options: { id: SortOption; label: string }[] = [
@@ -35,6 +48,16 @@ export default function SearchPage() {
         { id: "star", label: "평점순" },
         { id: "createDate", label: "최신순" },
     ];
+
+    useEffect(() => {
+        if (keywordFromUrl) {
+            SearchClick(0);
+        }
+    }, []);
+
+    useEffect(() => {
+        SearchClick(pageFromUrl);
+    }, [searchParams.toString()]);
 
     const SearchClick = (targetPage: number) => {
         startTransition(async () => {
@@ -68,6 +91,21 @@ export default function SearchPage() {
         });
     }
 
+    const updateSearchParams = (updates: Record<string, string | undefined>) => {
+        const params = new URLSearchParams(searchParams.toString());
+
+        Object.entries(updates).forEach(([key, value]) => {
+            if (value === undefined || value === "") {
+                params.delete(key);
+            } else {
+                params.set(key, value);
+            }
+        });
+
+        params.set("pageNo", "0");
+        router.push(`/search?${params.toString()}`, { scroll: false });
+    };
+
     const handleSel1Change = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedProvince = e.target.value;
         setSel1(selectedProvince);
@@ -75,6 +113,11 @@ export default function SearchPage() {
 
         const districts = DistrictCategory[selectedProvince as keyof typeof DistrictCategory] || [];
         setDistrictOptions(districts);
+
+        updateSearchParams({
+            city: selectedProvince,
+            gugun: "",
+        });
     }
 
     const sel3Options = useMemo(() => {
@@ -83,14 +126,23 @@ export default function SearchPage() {
     }, []);
 
     const handleSearchClick = () => {
-        SearchClick(0); 
+        updateSearchParams({
+            keyword: searchWord,
+            city: sel1,
+            gugun: sel2,
+            type: sel3,
+            sort: selectedSort,
+        });
     };
 
     const handlePageChange = (newIdx: number) => {
-        if (newIdx >= 0 && newIdx < totalPages) {
-            SearchClick(newIdx);
-            window.scrollTo(0, 0); // 이동 시 상단 스크롤
-        }
+        if (newIdx < 0 || newIdx >= totalPages) return;
+
+        const params = new URLSearchParams(searchParams.toString());
+
+        params.set("pageNo", String(newIdx));
+
+        router.push(`/search?${params.toString()}`, { scroll: false });
     };
 
     const pageNumbers = useMemo(() => {
@@ -114,6 +166,11 @@ export default function SearchPage() {
                             className="w-full h-16 pl-12 bg-white text-lg px-3 border-2 border-gray-200 rounded-3xl focus:outline-none
                                      focus:border-blue-500  active:border-blue-500 transition-all"
                             onChange={(e) => setSearchWord(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    handleSearchClick();
+                                }
+                            }}
                         />
                     </div>
                 </div>
@@ -197,14 +254,14 @@ export default function SearchPage() {
             </div>
             <div className="space-y-6">
                 <div className="flex items-center justify-start bg-white px-6 py-4 rounded-3xl border border-gray-200 shadow-sm">
-                    <p className="text-sm font-bold text-gray-700">검색 결과 <span className="text-blue-600">{listCnt}</span>건</p>
+                    <p className="text-sm font-bold text-gray-700">검색 결과 <span className="text-blue-600">{listCnt.toLocaleString()}</span>건</p>
                 </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
                 {isPending && (
-                    <div className="flex h-full justify-center items-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mr-10"></div>
-                        <p className="text-sm lg:text-base leading-relaxed text-blue-50 font-medium max-w-5xl">
+                    <div className="flex w-full h-full justify-center items-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue mr-10"></div>
+                        <p className="text-sm lg:text-base leading-relaxed text-black font-medium max-w-5xl">
                             검색 중 . . .
                         </p>
                     </div>
@@ -218,7 +275,7 @@ export default function SearchPage() {
             <div className="flex justify-end mx-10 mb-5">
                 {totalPages > 0 && !isPending && (
                     <div className="flex justify-center items-center gap-2 mt-12">
-                        <button 
+                        <button
                             onClick={() => handlePageChange(pageNo - 1)}
                             disabled={pageNo === 0}
                             className="p-2 rounded-lg border border-gray-200 disabled:opacity-30 hover:bg-gray-50"
@@ -231,8 +288,8 @@ export default function SearchPage() {
                                 key={num}
                                 onClick={() => handlePageChange(num)}
                                 className={`w-10 h-10 rounded-lg text-sm font-bold transition-all
-                                    ${pageNo === num 
-                                        ? "bg-blue-500 text-white shadow-md shadow-blue-100" 
+                                    ${pageNo === num
+                                        ? "bg-blue-500 text-white shadow-md shadow-blue-100"
                                         : "bg-white text-gray-600 border border-gray-100 hover:border-blue-300"
                                     }`}
                             >
@@ -240,7 +297,7 @@ export default function SearchPage() {
                             </button>
                         ))}
 
-                        <button 
+                        <button
                             onClick={() => handlePageChange(pageNo + 1)}
                             disabled={pageNo === totalPages - 1}
                             className="p-2 rounded-lg border border-gray-200 disabled:opacity-30 hover:bg-gray-50"

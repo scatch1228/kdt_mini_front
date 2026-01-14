@@ -1,4 +1,28 @@
 
+* 2026-01-14 업데이트
+ 1. 로그인 여부 확인
+   - cookies data 확인하여, 로그인 여부 판단
+ 2. "/search/detail" page 수정
+   - review 작성 div 추가
+   - 로그인 시 review 작성 가능. 로그인 되어있지않으면 input 블러 처리.
+ 3. "/dashboard" page 수정
+   - 시설 검색 input 이벤트 추가.
+ 4. "/search" page 수정
+   - detail page 이동 및 reload 시 filter 조건 유지
+   - 시설명 검색 input event 추가
+ 5. "/signin" page 수정
+   - 로그인 input event 추가
+
+* 2026-01-12 업데이트
+ 1. backend 연동
+   - "/signup" page post 작업 후, /signin 페이지 이동
+   - "/signin" page post 작업 후, /index 페이지 이동
+ 2. "/signup" page 수정
+   - username, password, alias의 패턴 입력 추가. 패턴 틀릴 시 바로 error문 출력
+   - 회원가입 server action 추가
+ 3. "/signin" page 수정
+   - server action => client fetch로 변경
+
 * 2026-01-08 업데이트
  1. backend 연동
    - "/dashboard" page Card List

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 import { Activity, Lock, LogIn, UserRound, UserRoundPlus } from 'lucide-react';
 import { SiNaver } from 'react-icons/si'
 import { FcGoogle } from "react-icons/fc";
@@ -13,9 +14,9 @@ export interface LoginRequest {
 }
 
 export default function SigninPage() {
-
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const { updateAuthState } = useAuth();
 
     const [formData, setFormData] = useState({
         mid: '',
@@ -23,14 +24,11 @@ export default function SigninPage() {
     });
 
     const loginClick = async () => {
-
-        console.log(formData);
-
         if (isLoading) return;
         setIsLoading(true);
 
         try {
-            const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/login`;
+            const url = `/api/login`;
             const resp = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -38,10 +36,9 @@ export default function SigninPage() {
                 credentials: 'include',
             });
 
-            console.log(resp);
-
             if (resp.ok) {
                 alert('로그인 성공!');
+                updateAuthState();
                 router.push('/');
             } else {
                 alert('로그인에 실패했습니다. 다시 시도해주세요.');
@@ -80,6 +77,12 @@ export default function SigninPage() {
                         onChange={(e) =>
                             setFormData({ ...formData, pwd: e.target.value })
                         }
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                loginClick();
+                            }
+                        }}
                         className="w-full h-12 pl-12 text-lg px-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500  active:border-blue-500 transition-all" />
                 </div>
                 <div className="relative px-5">
@@ -106,7 +109,7 @@ export default function SigninPage() {
                             <FcGoogle className="text-gray-400 w-9 h-9" />
                         </div>
                         <div className="w-full h-12 text-md flex justify-center items-center border-2 border-gray-200 text-gray-600 font-bold text-lg rounded-2xl bg-white hover:bg-gray-200 transition-all">
-                            <a href="http://10.125.121.185:8080/oauth2/authorization/google">
+                            <a href="http://10.125.121.185.nip.io:8080/oauth2/authorization/google">
                                 구글 로그인
                             </a>
                         </div>
