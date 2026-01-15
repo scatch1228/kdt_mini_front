@@ -16,7 +16,7 @@ export interface LoginRequest {
 export default function SigninPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
-    const { updateAuthState } = useAuth();
+    const { login } = useAuth();
 
     const [formData, setFormData] = useState({
         mid: '',
@@ -28,7 +28,7 @@ export default function SigninPage() {
         setIsLoading(true);
 
         try {
-            const url = `/api/login`;
+            const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/login`;
             const resp = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -38,8 +38,10 @@ export default function SigninPage() {
 
             if (resp.ok) {
                 alert('로그인 성공!');
-                updateAuthState();
-                router.push('/');
+                const token = resp.headers.get("Authorization");
+                const data = await resp.json();
+                login(data.alias, data.mid, token!);
+                router.replace('/');
             } else {
                 alert('로그인에 실패했습니다. 다시 시도해주세요.');
             }
@@ -58,7 +60,7 @@ export default function SigninPage() {
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900 tracking-wider">K-Sports Hub</h1>
             </div>
-            <div className="w-130 h-150 bg-white border-gray-200 p-5 rounded-3xl border shadow-md flex flex-col text-center space-y-5 pt-8">
+            <div className="w-130 h-140 bg-white border-gray-200 p-5 rounded-3xl border shadow-md flex flex-col text-center space-y-7 pt-9">
                 <div className="relative px-5">
                     <div className="absolute ml-5 inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                         <UserRound className="text-gray-400" />
@@ -73,7 +75,7 @@ export default function SigninPage() {
                     <div className="absolute ml-5 inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                         <Lock className="text-gray-400" />
                     </div>
-                    <input type="text" placeholder="Password" value={formData.pwd}
+                    <input type="password" placeholder="Password" value={formData.pwd}
                         onChange={(e) =>
                             setFormData({ ...formData, pwd: e.target.value })
                         }
@@ -103,7 +105,7 @@ export default function SigninPage() {
                         회원가입
                     </button>
                 </Link>
-                <div className="border-t border-gray-200 mt-2 pt-6 space-y-5">
+                <div className="border-t border-gray-200 mt-2 pt-8 space-y-8">
                     <div className="relative px-5">
                         <div className="absolute ml-5 inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                             <FcGoogle className="text-gray-400 w-9 h-9" />

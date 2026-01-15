@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from 'next/navigation'
-import { Activity, LayoutDashboard, LogIn, LogOut, Search } from "lucide-react";
+import { Activity, Home, LayoutDashboard, LogIn, LogOut, Search } from "lucide-react";
 import { useAtomValue } from "jotai"
 import { isLoginAtom } from "../atoms/atoms"
 import { useAuth } from "@/context/AuthContext";
 
 export default function Nav() {
-    const { isLoggedIn, alias, mid, logout } = useAuth();
+    const { isLoggedIn, userInfo, logout } = useAuth();
     const pathname = usePathname();
 
     return (
@@ -20,6 +20,13 @@ export default function Nav() {
                 <h1 className="hidden 2xl:block text-lg font-bold text-gray-900 tracking-tight">K-Sports Hub</h1>
             </div>
             <nav className="flex-1 px-4 space-y-2">
+                <Link
+                    href="/"
+                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${pathname === '/' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'}`}
+                >
+                    <Home size={20} />
+                    <span className="hidden 2xl:block text-sm font-semibold">홈</span>
+                </Link>
                 <Link
                     href="/dashboard"
                     className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${pathname === '/dashboard' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'}`}
@@ -41,7 +48,7 @@ export default function Nav() {
                         isLoggedIn ? (
                             <>
                                 <div className="hidden 2xl:block mb-5">
-                                    <p>반갑습니다. {alias}님.</p>
+                                    <p>반갑습니다. {userInfo?.alias}님.</p>
                                 </div>
                                 <button onClick={logout}
                                     className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all text-gray-400 hover:bg-gray-50 hover:text-gray-600`}

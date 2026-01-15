@@ -41,7 +41,9 @@ const FractionalStar = ({ percent, id }: { percent: number, id: string }) => {
 export default function ({ fid, star }: ReviewProps) {
 
     const [tdata, setTData] = useState<ReviewType[]>([]);
-    const { isLoggedIn, alias, mid, logout } = useAuth();
+    const { isLoggedIn, userInfo, accessToken } = useAuth();
+    const userMid = userInfo?.mid;
+    const userAlias = userInfo?.alias;
 
     const [newComment, setNewComment] = useState('');
     const [newRating, setNewRating] = useState(5);
@@ -53,7 +55,10 @@ export default function ({ fid, star }: ReviewProps) {
             const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/review?fid=${encodeURIComponent(fid)}`;
             const resp = await fetch(url, {
                 method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
                 cache: 'no-store',
                 credentials: 'include',
             });
@@ -74,18 +79,22 @@ export default function ({ fid, star }: ReviewProps) {
     const handleSubmitReview = (e: React.FormEvent) => {
         e.preventDefault();
         if (window.confirm('리뷰를 등록하시겠습니까?')) {
-            if (!isLoggedIn && !mid) {
+            if (!isLoggedIn && !userMid) {
                 alert("로그인이 필요합니다.");
                 return;
             }
             if (!newComment.trim()) return;
-
+            if (newComment.length > 500) {
+                alert("리뷰는 500자까지 작성 가능합니다.");
+                return;
+            }
             startTransition(async () => {
                 const params = {
                     fid: fid,
-                    mid: mid!,
+                    mid: userMid!,
                     cont: newComment,
                     star: newRating,
+                    accessToken: accessToken!,
                 };
 
                 const result = await addReview(params);
@@ -107,13 +116,18 @@ export default function ({ fid, star }: ReviewProps) {
     ) => {
         e.preventDefault();
         if (window.confirm('리뷰를 삭제하시겠습니까?')) {
-            if (reviewMid != mid) {
+            if (reviewMid != userMid) {
                 alert("해당 리뷰 작성자만 삭제할 수 있습니다.");
                 return;
             }
 
+            const params = {
+                seq: seq,
+                accessToken: accessToken!,
+            };
+
             startTransition(async () => {
-                const result = await deleteReview(seq);
+                const result = await deleteReview(params);
 
                 if (result) {
                     await handleReviewLoad();
@@ -193,7 +207,7 @@ export default function ({ fid, star }: ReviewProps) {
 
                     {!isLoggedIn && (
                         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/30 backdrop-blur-[2px] transition-all">
-                            <p className="text-gray-800 font-bold mb-3">로그인 후 리뷰 작성이 가능합니다</p>
+                            <p className="text-gray-800 font-bold mb-3">로그인 후 리뷰 조회가 가능합니다</p>
                             <button
                                 onClick={() => window.location.href = '/signin'}
                                 className="px-6 py-2 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 shadow-md transition-colors"
@@ -206,7 +220,36 @@ export default function ({ fid, star }: ReviewProps) {
             </div>
 
             <div className="space-y-5 pt-4">
-                {tdata.map(review => (
+                {!isLoggedIn ? (
+                    <div className="relative p-5 bg-gray-50/50 rounded-2xl  flex flex-col gap-2 transition-all">
+                        <div className="flex items-center">
+                            <div className="flex w-30 items-center gap-2">
+                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xs">
+                                    구라
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-xs font-bold text-gray-800">{"tysdy****"}</p>
+                                    <div className="flex gap-0.5">
+                                        {[1, 2, 3, 4, 5].map(i => (
+                                            <Star key={i} size={10} fill={"#2563eb"} className={"text-blue-600"} />
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className='flex-1'>
+                                <p className="text-md text-gray-600 leading-relaxed pl-10 mr-10">{"건물이 깨끗해요"}</p>
+                            </div>
+                            <button
+                                disabled={true}
+                                className='flex p-2 justify-end rounded-xl hover:bg-gray-200 transition-all z-10'>
+                                <Trash2 className='text-gray-500' />
+                            </button>
+                        </div>
+                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/30 backdrop-blur-[2px] transition-all">
+                            
+                        </div>
+                    </div>
+                ) : tdata.map(review => (
                     <div key={review.seq} className="p-5 bg-gray-50/50 rounded-2xl border border-gray-100 flex flex-col gap-2 transition-all hover:bg-white hover:border-blue-100">
                         <div className="flex items-center">
                             <div className="flex w-30 items-center gap-2">
@@ -214,9 +257,9 @@ export default function ({ fid, star }: ReviewProps) {
                                     {review.alias.slice(0, 2)}
                                 </div>
                                 <div className="flex-1">
-                                    <p className="text-xs font-bold text-gray-800">{review.alias}</p>
+                                    <p className="text-xs font-bold text-gray-800">{review.mid.slice(0, 6) + "****"}</p>
                                     <div className="flex gap-0.5">
-                                        {[0, 1, 2, 3, 4].map(i => (
+                                        {[1, 2, 3, 4, 5].map(i => (
                                             <Star key={i} size={10} fill={i <= review.star ? "#2563eb" : "none"} className={i <= review.star ? "text-blue-600" : "text-gray-200"} />
                                         ))}
                                     </div>
@@ -226,7 +269,7 @@ export default function ({ fid, star }: ReviewProps) {
                                 <p className="text-md text-gray-600 leading-relaxed pl-10 mr-10">{review.cont}</p>
                             </div>
                             <button
-                                disabled={mid==review.mid ? false : true}
+                                disabled={userMid == review.mid ? false : true}
                                 onClick={(e) => handleDeleteReview(e, review.mid, review.seq)}
                                 className='flex p-2 justify-end rounded-xl hover:bg-gray-200 transition-all z-10'>
                                 <Trash2 className='text-gray-500' />

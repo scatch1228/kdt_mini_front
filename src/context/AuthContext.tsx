@@ -1,64 +1,48 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import Cookies from "js-cookie"
 
 interface AuthContextType {
     isLoggedIn: boolean;
-    alias: string | null;
-    mid: string | null;
-    updateAuthState: () => void;
+    userInfo: { alias: string; mid: string } | null;
+    accessToken: string | null;
+    login: (alias: string, mid: string, token: string) => void;
     logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [alias, setAlias] = useState<string | null>(null);
-    const [mid, setMid] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [userInfo, setUserInfo] = useState<{ alias: string; mid: string } | null>(null);
 
-    const updateAuthState = () => {
-        const savedAlias = Cookies.get("alias");
-        const savedMid = Cookies.get("mid");
-        if (savedAlias && savedMid) {
-            setIsLoggedIn(true);
-            setAlias(decodeURIComponent(savedAlias));
-            setMid(decodeURIComponent(savedMid));
-        } else {
-            setIsLoggedIn(false);
-            setAlias(null);
-            setMid(null);
-        }
-    };
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user_info");
+    if (savedUser) {
+      setUserInfo(JSON.parse(savedUser));
+    }
+  }, []);
 
-    useEffect(() => {
-        updateAuthState();
-    }, []);
+  const isLoggedIn = !!userInfo; 
 
-    const login = () => {
-        const token = Cookies.get("token");
-        const savedAlias = Cookies.get("alias");
-        const savedMid = Cookies.get("mid");
-        if (token) {
-            setIsLoggedIn(true);
-            setAlias(savedAlias || "게스트");
-            setMid(savedMid || "")
-        }
-    };
+  const login = (alias: string, mid: string, token: string) => {
+    localStorage.setItem("user_info", JSON.stringify({ alias, mid }));
+    setAccessToken(token);
+    setUserInfo({ alias, mid });
+  };
 
-    const logout = () => {
-        Cookies.remove("alias");
-        Cookies.remove("mid");
-        updateAuthState();
-        window.location.href = "/";
-    };
+  const logout = () => {
+    localStorage.removeItem("user_info");
+    setAccessToken(null);
+    setUserInfo(null);
+    window.location.href = "/";
+  };
 
-    return (
-        <AuthContext.Provider value={{ isLoggedIn, alias, mid, updateAuthState, logout }}>
-            {children}
-        </AuthContext.Provider>
-    );
+  return (
+    <AuthContext.Provider value={{ isLoggedIn, userInfo, accessToken, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export const useAuth = () => {

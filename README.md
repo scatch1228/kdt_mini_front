@@ -1,4 +1,14 @@
 
+* 2026-01-15 업데이트
+ 1. OAuth2 로그인 추가
+   - 구글 로그인 추가
+ 2. "/search/detail" page 수정
+   - review 조회, 추가, 삭제 로그인 인가 필요
+ 3. "/index" landing page 추가
+   - 간략 이미지 및 내용 설명
+ 4. 로그인 인가 설정
+   - 사용자 정보 사용을 위한 AuthContext.tsx 생성
+
 * 2026-01-14 업데이트
  1. 로그인 여부 확인
    - cookies data 확인하여, 로그인 여부 판단
