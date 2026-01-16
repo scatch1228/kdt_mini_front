@@ -3,7 +3,7 @@
 import { MessageSquare, Send, Star, Trash2 } from 'lucide-react';
 import { useState, useEffect, useCallback, startTransition } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { addReview, deleteReview } from '../actions'
+import { getReviews, addReview, deleteReview } from '../actions'
 
 interface ReviewProps {
     fid: number;
@@ -38,48 +38,48 @@ const FractionalStar = ({ percent, id }: { percent: number, id: string }) => {
     );
 };
 
-export default function ({ fid, star }: ReviewProps) {
+export default function ReviewComponent({ fid, star }: ReviewProps) {
 
     const [tdata, setTData] = useState<ReviewType[]>([]);
     const { isLoggedIn, userInfo, accessToken } = useAuth();
+    const [loading, setLoading] = useState(true);
     const userMid = userInfo?.mid;
-    const userAlias = userInfo?.alias;
 
     const [newComment, setNewComment] = useState('');
     const [newRating, setNewRating] = useState(5);
 
-    const handleReviewLoad = useCallback(async () => {
-        if (!fid) return;
+    const handleReviewLoad = useCallback(async (tokenToUse: string) => {
+        if (!fid || !tokenToUse) return;
 
         try {
-            const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/review?fid=${encodeURIComponent(fid)}`;
-            const resp = await fetch(url, {
-                method: 'GET',
-                headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-            },
-                cache: 'no-store',
-                credentials: 'include',
-            });
+            const cleanToken = tokenToUse.replace(/^["']|["']$/g, '');
 
-            if (resp.ok) {
-                const data = await resp.json();
-                setTData(data);
-            }
+            const data = await getReviews(fid, cleanToken);
+            setTData(data);
+            setLoading(false);
         } catch (error) {
-            console.error('Error fetching province data:', error);
+            console.error(error);
+            setLoading(false);
         }
     }, [fid]);
 
     useEffect(() => {
-        handleReviewLoad();
-    }, [handleReviewLoad]);
+        const savedToken = localStorage.getItem('access_token');
+        
+        if (accessToken) {
+            handleReviewLoad(accessToken);
+        } else if (savedToken) {
+            const cleanToken = savedToken.startsWith('"') ? JSON.parse(savedToken) : savedToken;
+            handleReviewLoad(cleanToken);
+        } else {
+            setLoading(false);
+        }
+    }, [accessToken, handleReviewLoad]);
 
     const handleSubmitReview = (e: React.FormEvent) => {
         e.preventDefault();
         if (window.confirm('리뷰를 등록하시겠습니까?')) {
-            if (!isLoggedIn && !userMid) {
+            if (!isLoggedIn && !userMid && !accessToken) {
                 alert("로그인이 필요합니다.");
                 return;
             }
@@ -102,8 +102,7 @@ export default function ({ fid, star }: ReviewProps) {
                 if (result) {
                     setNewComment('');
                     setNewRating(5);
-
-                    await handleReviewLoad();
+                    handleReviewLoad(accessToken!);
                 }
             });
         }
@@ -116,11 +115,14 @@ export default function ({ fid, star }: ReviewProps) {
     ) => {
         e.preventDefault();
         if (window.confirm('리뷰를 삭제하시겠습니까?')) {
+            if (!isLoggedIn && !userMid && !accessToken) {
+                alert("로그인이 필요합니다.");
+                return;
+            }
             if (reviewMid != userMid) {
                 alert("해당 리뷰 작성자만 삭제할 수 있습니다.");
                 return;
             }
-
             const params = {
                 seq: seq,
                 accessToken: accessToken!,
@@ -130,7 +132,7 @@ export default function ({ fid, star }: ReviewProps) {
                 const result = await deleteReview(params);
 
                 if (result) {
-                    await handleReviewLoad();
+                    await handleReviewLoad(accessToken!);
                 }
             });
         }
@@ -246,7 +248,7 @@ export default function ({ fid, star }: ReviewProps) {
                             </button>
                         </div>
                         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/30 backdrop-blur-[2px] transition-all">
-                            
+
                         </div>
                     </div>
                 ) : tdata.map(review => (

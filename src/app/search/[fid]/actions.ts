@@ -12,6 +12,26 @@ export interface DeleteReviewRequest {
     accessToken: string;
 };
 
+export async function getReviews(fid: number, accessToken: string) {
+    try {
+        const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/review?fid=${encodeURIComponent(fid)}`;
+        const resp = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `${accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            cache: 'no-store',
+        });
+
+        if (!resp.ok) return [];
+        return await resp.json();
+    } catch (error) {
+        console.error('리뷰 로드 실패:', error);
+        return [];
+    }
+}
+
 export async function addReview(params: AddReviewRequest) {
     const { fid, mid, cont, star, accessToken } = params;
 
@@ -20,10 +40,10 @@ export async function addReview(params: AddReviewRequest) {
         const resp = await fetch(url, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${accessToken}`,
+                'Authorization': `${accessToken}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({fid, mid, cont, star}),
+            body: JSON.stringify({ fid, mid, cont, star }),
             credentials: 'include',
         });
 
@@ -43,7 +63,7 @@ export async function deleteReview(params: DeleteReviewRequest) {
         const resp = await fetch(url, {
             method: 'DELETE',
             headers: {
-                'Authorization': `Bearer ${accessToken}`,
+                'Authorization': `${accessToken}`,
                 'Content-Type': 'application/json'
             },
             credentials: 'include',

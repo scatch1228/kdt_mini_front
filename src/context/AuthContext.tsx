@@ -21,18 +21,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (savedUser) {
       setUserInfo(JSON.parse(savedUser));
     }
+
+    const savedToken = localStorage.getItem("access_token");
+    if (savedToken) {
+      setAccessToken(JSON.parse(savedToken));
+    }
   }, []);
 
   const isLoggedIn = !!userInfo; 
 
   const login = (alias: string, mid: string, token: string) => {
     localStorage.setItem("user_info", JSON.stringify({ alias, mid }));
+    localStorage.setItem("access_token", JSON.stringify(token));
     setAccessToken(token);
     setUserInfo({ alias, mid });
   };
 
   const logout = () => {
     localStorage.removeItem("user_info");
+    localStorage.removeItem("access_token");
     setAccessToken(null);
     setUserInfo(null);
     window.location.href = "/";

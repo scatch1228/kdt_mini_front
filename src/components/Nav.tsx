@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { usePathname } from 'next/navigation'
 import { Activity, Home, LayoutDashboard, LogIn, LogOut, Search } from "lucide-react";
-import { useAtomValue } from "jotai"
-import { isLoginAtom } from "../atoms/atoms"
 import { useAuth } from "@/context/AuthContext";
 
 export default function Nav() {
@@ -42,7 +40,7 @@ export default function Nav() {
                     <span className="hidden 2xl:block text-sm font-semibold">시설 상세 검색</span>
                 </Link>
             </nav>
-            <div className="px-4 pb-4 h-30 space-y-2 border-t border-gray-200 pt-10">
+            <div className="px-4 pb-4 h-35 space-y-2 border-t border-gray-200 pt-10">
                 <div className="flex flex-col justify-center items-center text-gray-400">
                     {
                         isLoggedIn ? (

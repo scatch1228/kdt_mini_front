@@ -3,6 +3,12 @@
  1. "/signin" page 수정
    - OAuth callback page server component 변경
    - OAth url 환경변수 가져오게 변경
+ 2. "/search/deatil" page 수정
+   - 조회 Fetch actions.ts 로 이동
+ 3. Auth 오류 수정
+   - 페이지 리로드(F5) 시 token 못 읽어오는 오류 수정
+ 4. "/dashboard" page 수정
+   - Gemini 2.5 API 사용 안전진단 리포트 버튼 클릭 시 불러오게 변경.
 
 * 2026-01-15 업데이트
  1. OAuth2 로그인 추가
